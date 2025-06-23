@@ -68,22 +68,38 @@ func main() {
 	}
 
 	for _, fn := range metadata.SignatureFunctions {
-		fmt.Printf("Analyzing function: %s\n", fn.FunctionName)
-		if fn.Nonce == nil {
-			fmt.Println("  ⚠️  Missing nonce field")
+		fmt.Printf("Analyzing function: %s (%s)\n", fn.FunctionName, fn.FunctionSelector)
+		checkControlFields(fn)
+		checkSignaturePresence(fn)
+		fmt.Println("---")
+	}
+}
+
+func checkControlFields(fn SignatureFunction) {
+	if fn.Nonce == nil {
+		fmt.Println("  ⚠️  Missing nonce field")
+	}
+	if fn.Timestamp == nil {
+		fmt.Println("  ⚠️  Missing timestamp field")
+	}
+	if fn.Deadline == nil {
+		fmt.Println("  ⚠️  Missing deadline field")
+	}
+	if fn.DomainSeparator == nil {
+		fmt.Println("  ⚠️  Missing domainSeparator field")
+	}
+}
+
+func checkSignaturePresence(fn SignatureFunction) {
+	signatureParts := [][]SignatureField{fn.Signature, fn.V, fn.R, fn.S}
+	empty := true
+	for _, part := range signatureParts {
+		if len(part) > 0 {
+			empty = false
+			break
 		}
-		if fn.Timestamp == nil {
-			fmt.Println("  ⚠️  Missing timestamp field")
-		}
-		if fn.Deadline == nil {
-			fmt.Println("  ⚠️  Missing deadline field")
-		}
-		if fn.DomainSeparator == nil {
-			fmt.Println("  ⚠️  Missing domainSeparator field")
-		}
-		if len(fn.Signature) == 0 && len(fn.V) == 0 && len(fn.R) == 0 && len(fn.S) == 0 {
-			fmt.Println("  ⚠️  No signature input found")
-		}
-		fmt.Println()
+	}
+	if empty {
+		fmt.Println("  ⚠️  No signature input found")
 	}
 }
