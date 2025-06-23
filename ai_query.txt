@@ -25,7 +25,7 @@ solType: Solidity type (bytes, uint8, etc.)
 
 signerRole: optional (e.g., "user", "validator", "relayer")
 
-parentStruct: optional, name of the struct (only for structField and arrayElement)
+parentStruct: required if source is "structField"
 
 Signature Fields (the signed message structure):
 "signatureFields":

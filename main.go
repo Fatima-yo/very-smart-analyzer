@@ -15,25 +15,38 @@ const (
 	CustomSig SignatureKind = "CUSTOM"
 )
 
-type TypedField struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
-}
-
 type SignatureType struct {
 	Kind        SignatureKind `json:"kind"`
 	Description string        `json:"description"`
 }
 
+type SignatureField struct {
+	Name         string `json:"name"`
+	SolType      string `json:"solType"`
+	Source       string `json:"source,omitempty"`
+	SignerRole   string `json:"signerRole,omitempty"`
+	ParentStruct string `json:"parentStruct,omitempty"`
+}
+
+type SignatureFieldsStruct struct {
+	Structured bool             `json:"structured"`
+	StructName string           `json:"structName,omitempty"`
+	Fields     []SignatureField `json:"fields"`
+}
+
 type SignatureFunction struct {
-	FunctionName      string        `json:"functionName"`
-	SignatureType     SignatureType `json:"signatureType"`
-	Nonce             *TypedField   `json:"nonce,omitempty"`
-	Timestamp         *TypedField   `json:"timestamp,omitempty"`
-	Deadline          *TypedField   `json:"deadline,omitempty"`
-	DomainSeparator   *TypedField   `json:"domainSeparator,omitempty"`
-	SignatureFields   []TypedField  `json:"signatureFields"`
-	SignatureVariable TypedField    `json:"signatureVariable"`
+	FunctionName     string                `json:"functionName"`
+	FunctionSelector string                `json:"functionSelector"`
+	SignatureType    SignatureType         `json:"signatureType"`
+	Nonce            *SignatureField       `json:"nonce,omitempty"`
+	Timestamp        *SignatureField       `json:"timestamp,omitempty"`
+	Deadline         *SignatureField       `json:"deadline,omitempty"`
+	DomainSeparator  *SignatureField       `json:"domainSeparator,omitempty"`
+	SignatureFields  SignatureFieldsStruct `json:"signatureFields"`
+	Signature        []SignatureField      `json:"signature,omitempty"`
+	V                []SignatureField      `json:"v,omitempty"`
+	R                []SignatureField      `json:"r,omitempty"`
+	S                []SignatureField      `json:"s,omitempty"`
 }
 
 type SignatureMetadata struct {
@@ -67,6 +80,9 @@ func main() {
 		}
 		if fn.DomainSeparator == nil {
 			fmt.Println("  ⚠️  Missing domainSeparator field")
+		}
+		if len(fn.Signature) == 0 && len(fn.V) == 0 && len(fn.R) == 0 && len(fn.S) == 0 {
+			fmt.Println("  ⚠️  No signature input found")
 		}
 		fmt.Println()
 	}
