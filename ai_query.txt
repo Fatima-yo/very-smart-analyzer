@@ -19,11 +19,13 @@ Use the following keys if relevant: "signature", "v", "r", "s"
 
 Each is an array of objects with:
 
-source: one of "parameter", "structField", "arrayElement", "mappingValue", "constant"
+source: one of "parameter", "structField", "arrayElement"
 
 solType: Solidity type (bytes, uint8, etc.)
 
 signerRole: optional (e.g., "user", "validator", "relayer")
+
+parentStruct: optional, name of the struct (only for structField and arrayElement)
 
 Signature Fields (the signed message structure):
 "signatureFields":
