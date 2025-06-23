@@ -1,0 +1,54 @@
+You are helping build a smart fuzz-testing tool for Ethereum smart contracts. 
+This tool analyzes how contracts verify off-chain signatures and looks for logic-level security flaws and testable behaviors (like missing nonces or replays).
+
+Your task is to analyze a Solidity smart contract and return a JSON object that describes every function that accepts or verifies an off-chain signature.
+
+General Rules:
+For each function that verifies a signature:
+
+Return functionName and functionSelector (full Solidity signature)
+
+Specify signatureType.kind (one of: "EIP712", "ETH_SIGN", "EIP191", "CUSTOM")
+
+Use "signature", "v", "r", "s" arrays — always arrays, even for single values
+
+Omit any field not used
+
+Signature Inputs (actual signature data):
+Use the following keys if relevant: "signature", "v", "r", "s"
+
+Each is an array of objects with:
+
+source: one of "parameter", "structField", "arrayElement", "mappingValue", "constant"
+
+solType: Solidity type (bytes, uint8, etc.)
+
+signerRole: optional (e.g., "user", "validator", "relayer")
+
+Signature Fields (the signed message structure):
+"signatureFields":
+
+structured: true if passed as a struct
+
+structName: required if structured
+
+fields: array of { name, solType }
+
+Signature Control Fields (often required, even if unsigned):
+These are fields that may or may not appear in the contract. Return them only if found, otherwise omit:
+
+"nonce": { name, solType }
+
+"timestamp": { name, solType }
+
+"deadline": { name, solType }
+
+"domainSeparator": { name, solType }
+
+✅ Do not return nulls.
+✅ Do not return explanations.
+✅ Do not return comments.
+✅ Only return valid JSON.
+
+Solidity input:
+

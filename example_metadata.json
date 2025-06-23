@@ -1,0 +1,102 @@
+{
+  "signatureFunctions": [
+    {
+      "functionName": "executeMetaTx",
+      "functionSelector": "executeMetaTx(address,uint256,bytes,bytes)",
+      "signatureType": {
+        "kind": "EIP712",
+        "description": "Single combined signature"
+      },
+      "signatureFields": {
+        "structured": true,
+        "structName": "MetaTx",
+        "fields": [
+          { "name": "from", "solType": "address" },
+          { "name": "to", "solType": "address" },
+          { "name": "value", "solType": "uint256" },
+          { "name": "nonce", "solType": "uint256" },
+          { "name": "deadline", "solType": "uint64" }
+        ]
+      },
+      "signature": [
+        {
+          "source": "parameter",
+          "solType": "bytes",
+          "signerRole": "user"
+        }
+      ]
+    },
+    {
+      "functionName": "approveSplitSig",
+      "functionSelector": "approveSplitSig(address,uint256,uint8,bytes32,bytes32)",
+      "signatureType": {
+        "kind": "ETH_SIGN",
+        "description": "Single signature passed as v, r, s"
+      },
+      "signatureFields": {
+        "structured": false,
+        "fields": [
+          { "name": "spender", "solType": "address" },
+          { "name": "amount", "solType": "uint256" }
+        ]
+      },
+      "v": [
+        {
+          "source": "parameter",
+          "solType": "uint8",
+          "signerRole": "user"
+        }
+      ],
+      "r": [
+        {
+          "source": "parameter",
+          "solType": "bytes32",
+          "signerRole": "user"
+        }
+      ],
+      "s": [
+        {
+          "source": "parameter",
+          "solType": "bytes32",
+          "signerRole": "user"
+        }
+      ]
+    },
+    {
+      "functionName": "batchExecuteMultisig",
+      "functionSelector": "batchExecuteMultisig(bytes32,uint256,uint8[],bytes32[],bytes32[])",
+      "signatureType": {
+        "kind": "EIP712",
+        "description": "Multisig batch via arrays of v/r/s"
+      },
+      "signatureFields": {
+        "structured": false,
+        "fields": [
+          { "name": "op", "solType": "bytes32" },
+          { "name": "nonce", "solType": "uint256" }
+        ]
+      },
+      "v": [
+        {
+          "source": "parameter",
+          "solType": "uint8[]",
+          "signerRole": "multisig"
+        }
+      ],
+      "r": [
+        {
+          "source": "parameter",
+          "solType": "bytes32[]",
+          "signerRole": "multisig"
+        }
+      ],
+      "s": [
+        {
+          "source": "parameter",
+          "solType": "bytes32[]",
+          "signerRole": "multisig"
+        }
+      ]
+    }
+  ]
+}
