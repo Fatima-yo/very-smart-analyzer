@@ -4,12 +4,16 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	"very_smart_analyzer/internal/analyzer"
 
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/fatih/color"
 )
 
 // FuzzTest represents a single fuzz test case
@@ -46,6 +50,62 @@ type Fuzzer struct {
 	// TODO: Add fields for test execution, network connection, etc.
 }
 
+// Color definitions for beautiful output
+var (
+	headerColor   = color.New(color.FgCyan, color.Bold)
+	successColor  = color.New(color.FgGreen, color.Bold)
+	errorColor    = color.New(color.FgRed, color.Bold)
+	warningColor  = color.New(color.FgYellow, color.Bold)
+	infoColor     = color.New(color.FgBlue)
+	testColor     = color.New(color.FgMagenta)
+	progressColor = color.New(color.FgWhite, color.Bold)
+	dimColor      = color.New(color.FgHiBlack)
+)
+
+// printBanner prints a beautiful ASCII banner
+func printBanner(title string) {
+	width := 80
+	padding := (width - len(title) - 4) / 2
+
+	fmt.Println()
+	headerColor.Println("╔" + strings.Repeat("═", width-2) + "╗")
+	headerColor.Printf("║%s%s%s║\n",
+		strings.Repeat(" ", padding),
+		title,
+		strings.Repeat(" ", width-2-padding-len(title)))
+	headerColor.Println("╚" + strings.Repeat("═", width-2) + "╝")
+	fmt.Println()
+}
+
+// printSection prints a section header
+func printSection(title string) {
+	fmt.Println()
+	headerColor.Printf("▶ %s\n", title)
+	headerColor.Println(strings.Repeat("─", len(title)+2))
+}
+
+// printProgress prints a progress bar
+func printProgress(current, total int, description string) {
+	percentage := float64(current) / float64(total) * 100
+	barWidth := 40
+	filled := int(float64(barWidth) * percentage / 100)
+
+	bar := "["
+	for i := 0; i < barWidth; i++ {
+		if i < filled {
+			bar += "█"
+		} else {
+			bar += "░"
+		}
+	}
+	bar += "]"
+
+	progressColor.Printf("\r%s %6.1f%% (%d/%d) %s", bar, percentage, current, total, description)
+	if current == total {
+		fmt.Println()
+	}
+}
+
 // NewFuzzer creates a new fuzzer instance
 func NewFuzzer() *Fuzzer {
 	return &Fuzzer{}
@@ -71,11 +131,20 @@ func (f *Fuzzer) RunFuzzTests(contractPath, metadataPath string, iterations int)
 
 // loadMetadata loads signature metadata from file
 func (f *Fuzzer) loadMetadata(metadataPath string) (*analyzer.SignatureMetadata, error) {
-	// TODO: Implement metadata loading
-	// For now, return empty metadata
-	return &analyzer.SignatureMetadata{
-		SignatureFunctions: []analyzer.SignatureFunction{},
-	}, nil
+	// Read the metadata file
+	data, err := os.ReadFile(metadataPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read metadata file: %w", err)
+	}
+
+	// Parse the JSON metadata
+	var metadata analyzer.SignatureMetadata
+	if err := json.Unmarshal(data, &metadata); err != nil {
+		return nil, fmt.Errorf("failed to parse metadata JSON: %w", err)
+	}
+
+	fmt.Printf("Loaded %d signature functions from metadata\n", len(metadata.SignatureFunctions))
+	return &metadata, nil
 }
 
 // generateTestCases generates fuzz test cases based on metadata
@@ -344,6 +413,8 @@ func (f *Fuzzer) generateRandomData() string {
 func (f *Fuzzer) executeTests(testCases []FuzzTest) []FuzzTestResult {
 	var results []FuzzTestResult
 
+	fmt.Printf("Starting execution of %d test cases...\n", len(testCases))
+
 	// TODO: Implement actual test execution
 	// This would involve:
 	// 1. Deploying the contract to the test network
@@ -351,7 +422,11 @@ func (f *Fuzzer) executeTests(testCases []FuzzTest) []FuzzTestResult {
 	// 3. Capturing the results
 	// 4. Comparing with expected results
 
-	for _, testCase := range testCases {
+	for i, testCase := range testCases {
+		fmt.Printf("Executing test %d/%d: %s\n", i+1, len(testCases), testCase.Name)
+		fmt.Printf("  Description: %s\n", testCase.Description)
+		fmt.Printf("  Type: %s\n", testCase.Type)
+
 		// Placeholder: simulate test execution
 		result := FuzzTestResult{
 			ShouldFail: testCase.Expected.ShouldFail,
@@ -359,8 +434,11 @@ func (f *Fuzzer) executeTests(testCases []FuzzTest) []FuzzTestResult {
 			Message:    fmt.Sprintf("Test executed: %s", testCase.Name),
 		}
 		results = append(results, result)
+
+		fmt.Printf("  Result: %s (Expected to fail: %v)\n", result.ErrorType, result.ShouldFail)
 	}
 
+	fmt.Printf("Completed execution of all test cases.\n")
 	return results
 }
 

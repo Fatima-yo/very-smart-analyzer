@@ -43,3 +43,4 @@ fuzz_report_*.txt
 
 # Generated test vectors
 generated_test_vectors/
+.env
