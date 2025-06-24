@@ -301,64 +301,138 @@ func (a *Analyzer) performSecurityAnalysis(metadata *SignatureMetadata) {
 // analyzeFunctionVulnerabilities analyzes a single function for vulnerabilities
 func (a *Analyzer) analyzeFunctionVulnerabilities(fn *SignatureFunction) []VulnerabilityType {
 	DebugPrintStep("VULNERABILITY_ANALYSIS", "Analyzing vulnerabilities for function: %s", fn.FunctionName)
+	DebugPrintAnalysis("Starting vulnerability analysis for function: %s", fn.FunctionName)
+	DebugPrintAnalysis("Function signature type: %s", fn.SignatureType.Kind)
+	DebugPrintAnalysis("Function has %d signature fields", len(fn.SignatureFields.Fields))
 
 	var vulnerabilities []VulnerabilityType
 
 	// Check for missing nonce
+	DebugPrintAnalysis("Checking for nonce field...")
 	if fn.Nonce == nil {
-		DebugPrintAnalysis("Function %s: Missing nonce field", fn.FunctionName)
+		DebugPrintAnalysis("❌ Function %s: Missing nonce field", fn.FunctionName)
 		vulnerabilities = append(vulnerabilities, VulnMissingNonce)
-	} else if fn.Nonce.ValidationType == ValidationMissing {
-		DebugPrintAnalysis("Function %s: Nonce present but not validated", fn.FunctionName)
-		vulnerabilities = append(vulnerabilities, VulnMissingNonce)
+	} else {
+		DebugPrintAnalysis("✅ Function %s: Nonce field found (name: %s, type: %s, source: %s)",
+			fn.FunctionName, fn.Nonce.Name, fn.Nonce.SolType, fn.Nonce.Source)
+		if fn.Nonce.ValidationType == ValidationMissing {
+			DebugPrintAnalysis("❌ Function %s: Nonce present but not validated (validation: %s)",
+				fn.FunctionName, fn.Nonce.ValidationType)
+			vulnerabilities = append(vulnerabilities, VulnMissingNonce)
+		} else {
+			DebugPrintAnalysis("✅ Function %s: Nonce validation OK (validation: %s)",
+				fn.FunctionName, fn.Nonce.ValidationType)
+		}
 	}
 
 	// Check for missing deadline
+	DebugPrintAnalysis("Checking for deadline field...")
 	if fn.Deadline == nil {
-		DebugPrintAnalysis("Function %s: Missing deadline field", fn.FunctionName)
+		DebugPrintAnalysis("❌ Function %s: Missing deadline field", fn.FunctionName)
 		vulnerabilities = append(vulnerabilities, VulnMissingDeadline)
-	} else if fn.Deadline.ValidationType == ValidationMissing {
-		DebugPrintAnalysis("Function %s: Deadline present but not validated", fn.FunctionName)
-		vulnerabilities = append(vulnerabilities, VulnMissingDeadline)
+	} else {
+		DebugPrintAnalysis("✅ Function %s: Deadline field found (name: %s, type: %s, source: %s)",
+			fn.FunctionName, fn.Deadline.Name, fn.Deadline.SolType, fn.Deadline.Source)
+		if fn.Deadline.ValidationType == ValidationMissing {
+			DebugPrintAnalysis("❌ Function %s: Deadline present but not validated (validation: %s)",
+				fn.FunctionName, fn.Deadline.ValidationType)
+			vulnerabilities = append(vulnerabilities, VulnMissingDeadline)
+		} else {
+			DebugPrintAnalysis("✅ Function %s: Deadline validation OK (validation: %s)",
+				fn.FunctionName, fn.Deadline.ValidationType)
+		}
 	}
 
 	// Check for missing timestamp
+	DebugPrintAnalysis("Checking for timestamp field...")
 	if fn.Timestamp == nil {
-		DebugPrintAnalysis("Function %s: Missing timestamp field", fn.FunctionName)
+		DebugPrintAnalysis("❌ Function %s: Missing timestamp field", fn.FunctionName)
 		vulnerabilities = append(vulnerabilities, VulnMissingTimestamp)
+	} else {
+		DebugPrintAnalysis("✅ Function %s: Timestamp field found (name: %s, type: %s, source: %s)",
+			fn.FunctionName, fn.Timestamp.Name, fn.Timestamp.SolType, fn.Timestamp.Source)
+		if fn.Timestamp.ValidationType == ValidationMissing {
+			DebugPrintAnalysis("❌ Function %s: Timestamp present but not validated (validation: %s)",
+				fn.FunctionName, fn.Timestamp.ValidationType)
+			vulnerabilities = append(vulnerabilities, VulnMissingTimestamp)
+		} else {
+			DebugPrintAnalysis("✅ Function %s: Timestamp validation OK (validation: %s)",
+				fn.FunctionName, fn.Timestamp.ValidationType)
+		}
 	}
 
 	// Check for missing chain ID
+	DebugPrintAnalysis("Checking for chain ID field...")
 	if fn.ChainID == nil {
-		DebugPrintAnalysis("Function %s: Missing chain ID field", fn.FunctionName)
+		DebugPrintAnalysis("❌ Function %s: Missing chain ID field", fn.FunctionName)
 		vulnerabilities = append(vulnerabilities, VulnMissingChainID)
+	} else {
+		DebugPrintAnalysis("✅ Function %s: Chain ID field found (name: %s, type: %s, source: %s)",
+			fn.FunctionName, fn.ChainID.Name, fn.ChainID.SolType, fn.ChainID.Source)
+		if fn.ChainID.ValidationType == ValidationMissing {
+			DebugPrintAnalysis("❌ Function %s: Chain ID present but not validated (validation: %s)",
+				fn.FunctionName, fn.ChainID.ValidationType)
+			vulnerabilities = append(vulnerabilities, VulnMissingChainID)
+		} else {
+			DebugPrintAnalysis("✅ Function %s: Chain ID validation OK (validation: %s)",
+				fn.FunctionName, fn.ChainID.ValidationType)
+		}
 	}
 
 	// Check for missing domain separator
+	DebugPrintAnalysis("Checking for domain separator...")
 	if fn.DomainSeparator == nil {
-		DebugPrintAnalysis("Function %s: Missing domain separator", fn.FunctionName)
+		DebugPrintAnalysis("❌ Function %s: Missing domain separator", fn.FunctionName)
 		vulnerabilities = append(vulnerabilities, VulnMissingDomainSeparator)
+	} else {
+		DebugPrintAnalysis("✅ Function %s: Domain separator found (name: %s, type: %s, source: %s)",
+			fn.FunctionName, fn.DomainSeparator.Name, fn.DomainSeparator.SolType, fn.DomainSeparator.Source)
+		if fn.DomainSeparator.ValidationType == ValidationMissing {
+			DebugPrintAnalysis("❌ Function %s: Domain separator present but not validated (validation: %s)",
+				fn.FunctionName, fn.DomainSeparator.ValidationType)
+			vulnerabilities = append(vulnerabilities, VulnMissingDomainSeparator)
+		} else {
+			DebugPrintAnalysis("✅ Function %s: Domain separator validation OK (validation: %s)",
+				fn.FunctionName, fn.DomainSeparator.ValidationType)
+		}
 	}
 
 	// Check for weak signer validation
-	if !a.hasStrongSignerValidation(fn) {
-		DebugPrintAnalysis("Function %s: Weak signer validation", fn.FunctionName)
+	DebugPrintAnalysis("Checking signer validation strength...")
+	signerValidation := a.hasStrongSignerValidation(fn)
+	if !signerValidation {
+		DebugPrintAnalysis("❌ Function %s: Weak signer validation", fn.FunctionName)
+		DebugPrintAnalysis("  - Signature fields: %d", len(fn.Signature))
+		DebugPrintAnalysis("  - V fields: %d", len(fn.V))
+		DebugPrintAnalysis("  - R fields: %d", len(fn.R))
+		DebugPrintAnalysis("  - S fields: %d", len(fn.S))
 		vulnerabilities = append(vulnerabilities, VulnWeakSignerValidation)
+	} else {
+		DebugPrintAnalysis("✅ Function %s: Strong signer validation", fn.FunctionName)
 	}
 
 	// Check for unsafe signature recovery
-	if a.hasUnsafeSignatureRecovery(fn) {
-		DebugPrintAnalysis("Function %s: Unsafe signature recovery", fn.FunctionName)
+	DebugPrintAnalysis("Checking signature recovery safety...")
+	unsafeRecovery := a.hasUnsafeSignatureRecovery(fn)
+	if unsafeRecovery {
+		DebugPrintAnalysis("❌ Function %s: Unsafe signature recovery", fn.FunctionName)
 		vulnerabilities = append(vulnerabilities, VulnUnsafeSignatureRecovery)
+	} else {
+		DebugPrintAnalysis("✅ Function %s: Safe signature recovery", fn.FunctionName)
 	}
 
 	// Check for insufficient entropy
-	if a.hasInsufficientEntropy(fn) {
-		DebugPrintAnalysis("Function %s: Insufficient entropy", fn.FunctionName)
+	DebugPrintAnalysis("Checking entropy sufficiency...")
+	insufficientEntropy := a.hasInsufficientEntropy(fn)
+	if insufficientEntropy {
+		DebugPrintAnalysis("❌ Function %s: Insufficient entropy", fn.FunctionName)
 		vulnerabilities = append(vulnerabilities, VulnInsufficientEntropy)
+	} else {
+		DebugPrintAnalysis("✅ Function %s: Sufficient entropy", fn.FunctionName)
 	}
 
 	DebugPrintStep("VULNERABILITY_ANALYSIS", "Function %s: Found %d vulnerabilities", fn.FunctionName, len(vulnerabilities))
+	DebugPrintAnalysis("Vulnerability analysis completed for function: %s", fn.FunctionName)
 	return vulnerabilities
 }
 

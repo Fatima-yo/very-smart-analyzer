@@ -95,6 +95,55 @@ func main() {
 
 	analyzer.DebugPrintStep("PIPELINE", "Security report generated")
 
+	// Step 5: Generate test cases
+	fmt.Println("\n5. Generating test cases...")
+	analyzer.DebugPrintStep("PIPELINE", "Starting test case generation")
+
+	testGenerator := analyzer.NewTestGenerator()
+	analyzer.DebugPrintStep("PIPELINE", "Test generator created")
+
+	totalTestCases := 0
+	totalVulnerableTests := 0
+
+	for i, fn := range metadata.SignatureFunctions {
+		analyzer.DebugPrintStep("PIPELINE", "Generating tests for function %d/%d: %s", i+1, len(metadata.SignatureFunctions), fn.FunctionName)
+
+		testSuite := testGenerator.GenerateTestCases(&fn)
+		totalTestCases += testSuite.TotalTests
+		totalVulnerableTests += testSuite.VulnerableTests
+
+		fmt.Printf("\nFunction: %s\n", fn.FunctionName)
+		fmt.Printf("  Signature Type: %s\n", testSuite.SignatureType)
+		fmt.Printf("  Test Cases Generated: %d\n", testSuite.TotalTests)
+		fmt.Printf("  Vulnerable Test Cases: %d\n", testSuite.VulnerableTests)
+
+		// Show some example test cases
+		if len(testSuite.TestCases) > 0 {
+			fmt.Printf("  Example Tests:\n")
+			for j, tc := range testSuite.TestCases {
+				if j >= 3 { // Show only first 3 tests
+					break
+				}
+				fmt.Printf("    - %s (%s): %s\n", tc.Name, tc.Severity, tc.Description)
+			}
+		}
+
+		analyzer.DebugPrintStep("PIPELINE", "Test generation completed for function %s", fn.FunctionName)
+	}
+
+	// Generate test report
+	fmt.Printf("\nTest Generation Summary:\n")
+	fmt.Printf("  Total Functions: %d\n", len(metadata.SignatureFunctions))
+	fmt.Printf("  Total Test Cases: %d\n", totalTestCases)
+	fmt.Printf("  Total Vulnerable Tests: %d\n", totalVulnerableTests)
+	fmt.Printf("  Average Tests per Function: %.1f\n", float64(totalTestCases)/float64(len(metadata.SignatureFunctions)))
+
+	// Generate detailed test report
+	testReport := testGenerator.GenerateTestReport()
+	fmt.Println("\n" + testReport)
+
+	analyzer.DebugPrintStep("PIPELINE", "Test generation completed")
+
 	fmt.Println("\n✅ Pipeline test completed successfully!")
 	analyzer.DebugPrintStep("PIPELINE", "Pipeline test completed successfully")
 }
