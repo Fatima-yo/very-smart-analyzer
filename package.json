@@ -14,14 +14,14 @@
   },
   "dependencies": {
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
-    "@openzeppelin/contracts": "^5.0.0",
-    "hardhat": "^2.19.0",
-    "ganache": "^7.7.7"
+    "@openzeppelin/contracts": "^5.3.0",
+    "ganache": "^7.7.7",
+    "hardhat": "^2.19.0"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.0",
-    "ethers": "^6.8.0",
     "chai": "^4.3.7",
+    "ethers": "^6.8.0",
     "mocha": "^10.2.0"
   },
   "keywords": [
@@ -33,4 +33,4 @@
   ],
   "author": "Very Smart Analyzer Team",
   "license": "MIT"
-} 
+}

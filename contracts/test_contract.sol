@@ -1,102 +1,102 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-
-contract TestSignatureContract is EIP712 {
-    using ECDSA for bytes32;
-
+contract TestSignatureContract {
     mapping(bytes32 => bool) public usedHashes;
     mapping(address => uint256) public nonces;
 
-    struct Permit {
-        address owner;
-        address spender;
-        uint256 value;
-        uint256 nonce;
-        uint256 deadline;
-    }
+    event SignatureVerified(address signer, bytes32 messageHash);
+    
+    constructor() {}
 
-    bytes32 public constant PERMIT_TYPEHASH = keccak256(
-        "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
-    );
-
-    constructor() EIP712("TestSignatureContract", "1") {}
-
-    // Function with combined signature parameter
-    function approveWithSignature(
-        address spender,
-        uint256 amount,
+    // Simple signature verification function
+    function verifySignature(
+        bytes32 messageHash,
         bytes memory signature
-    ) external {
-        bytes32 messageHash = keccak256(abi.encodePacked(spender, amount));
-        bytes32 ethSignedMessageHash = messageHash.toEthSignedMessageHash();
-        address signer = ethSignedMessageHash.recover(signature);
-        
-        // Check if signature is already used
+    ) external returns (bool) {
+        // Check if signature is already used (replay protection)
         require(!usedHashes[messageHash], "Signature already used");
+        
+        // Mark signature as used
         usedHashes[messageHash] = true;
         
-        // Approve the spender
-        // This is a simplified version - in real contracts you'd have actual approval logic
+        // Extract signature components
+        require(signature.length == 65, "Invalid signature length");
+        
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        
+        assembly {
+            r := mload(add(signature, 32))
+            s := mload(add(signature, 64))
+            v := byte(0, mload(add(signature, 96)))
+        }
+        
+        // Recover signer address
+        address signer = ecrecover(messageHash, v, r, s);
+        require(signer != address(0), "Invalid signature");
+        
+        emit SignatureVerified(signer, messageHash);
+        return true;
     }
 
-    // Function with EIP712 permit
-    function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external {
-        require(deadline >= block.timestamp, "Permit expired");
+    // Function with nonce-based protection
+    function executeWithNonce(
+        bytes32 messageHash,
+        bytes memory signature,
+        uint256 nonce
+    ) external returns (bool) {
+        // Check nonce
+        require(nonces[msg.sender] == nonce, "Invalid nonce");
+        nonces[msg.sender]++;
         
-        bytes32 structHash = keccak256(
-            abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline)
-        );
-        bytes32 hash = _hashTypedDataV4(structHash);
+        // Verify signature (inline to avoid recursion)
+        require(signature.length == 65, "Invalid signature length");
         
-        address signer = ECDSA.recover(hash, v, r, s);
-        require(signer == owner, "Invalid signature");
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
         
-        // Approve the spender
-        // This is a simplified version - in real contracts you'd have actual approval logic
+        assembly {
+            r := mload(add(signature, 32))
+            s := mload(add(signature, 64))
+            v := byte(0, mload(add(signature, 96)))
+        }
+        
+        address signer = ecrecover(messageHash, v, r, s);
+        require(signer != address(0), "Invalid signature");
+        
+        emit SignatureVerified(signer, messageHash);
+        return true;
     }
 
-    // Function with missing nonce protection (vulnerable)
-    function vulnerableApprove(
-        address spender,
-        uint256 amount,
+    // Vulnerable function without replay protection
+    function vulnerableVerify(
+        bytes32 messageHash,
         bytes memory signature
-    ) external {
-        bytes32 messageHash = keccak256(abi.encodePacked(spender, amount));
-        bytes32 ethSignedMessageHash = messageHash.toEthSignedMessageHash();
-        address signer = ethSignedMessageHash.recover(signature);
+    ) external returns (bool) {
+        // No replay protection - vulnerable!
+        require(signature.length == 65, "Invalid signature length");
         
-        // Missing nonce check - vulnerable to replay attacks
-        // Approve the spender
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        
+        assembly {
+            r := mload(add(signature, 32))
+            s := mload(add(signature, 64))
+            v := byte(0, mload(add(signature, 96)))
+        }
+        
+        address signer = ecrecover(messageHash, v, r, s);
+        require(signer != address(0), "Invalid signature");
+        
+        return true;
     }
-
-    // Function with missing deadline protection (vulnerable)
-    function vulnerablePermit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external {
-        bytes32 structHash = keccak256(
-            abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, 0) // No deadline
-        );
-        bytes32 hash = _hashTypedDataV4(structHash);
-        
-        address signer = ECDSA.recover(hash, v, r, s);
-        require(signer == owner, "Invalid signature");
-        
-        // Approve the spender
+    
+    // Get current nonce for an address
+    function getCurrentNonce(address account) external view returns (uint256) {
+        return nonces[account];
     }
 } 
