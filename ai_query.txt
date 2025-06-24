@@ -8,24 +8,33 @@ For each function that verifies a signature:
 
 Return functionName and functionSelector (full Solidity signature)
 
-Specify signatureType.kind (one of: "EIP712", "ETH_SIGN", "EIP191", "CUSTOM")
+Specify signatureType.kind (one of: "EIP712", "ETH_SIGN", "EIP191_PERSONAL_SIGN", "EIP2612", "EIP1271", "CUSTOM")
 
 Use "signature", "v", "r", "s" arrays — always arrays, even for single values
 
 Omit any field not used
+
+Function Context:
+"visibility": one of "public", "external", "internal", "private"
+"stateMutability": one of "pure", "view", "payable", "nonpayable"
+"accessControl": array of modifiers (e.g., ["onlyOwner", "whenNotPaused"])
 
 Signature Inputs (actual signature data):
 Use the following keys if relevant: "signature", "v", "r", "s"
 
 Each is an array of objects with:
 
-source: one of "parameter", "structField", "arrayElement"
+source: one of "parameter", "structField", "arrayElement", "mappingKey", "mappingValue"
 
-solType: Solidity type (bytes, uint8, etc.)
+solType: Solidity type (bytes, uint8, bytes32, etc.)
 
-signerRole: optional (e.g., "user", "validator", "relayer")
+signerRole: optional (e.g., "user", "validator", "relayer", "owner", "guardian")
 
 parentStruct: required if source is "structField"
+
+arrayIndex: required if source is "arrayElement"
+
+mappingKey: required if source is "mappingKey" or "mappingValue"
 
 Signature Fields (the signed message structure):
 "signatureFields":
@@ -34,23 +43,64 @@ structured: true if passed as a struct
 
 structName: required if structured
 
-fields: array of { name, solType }
+fields: array of { name, solType, isNested, nestedStructName }
 
-Signature Control Fields (often required, even if unsigned):
+isNested: true if field is a nested struct
+
+nestedStructName: required if isNested is true
+
+Signature Control Fields (security-critical fields):
 These are fields that may or may not appear in the contract. Return them only if found, otherwise omit:
 
-"nonce": { name, solType }
+"nonce": { name, solType, source, validationType }
+"timestamp": { name, solType, source, validationType }
+"deadline": { name, solType, source, validationType }
+"chainId": { name, solType, source, validationType }
+"version": { name, solType, source, validationType }
+"domainSeparator": { name, solType, source, validationType }
+"salt": { name, solType, source, validationType }
 
-"timestamp": { name, solType }
+source: one of "parameter", "structField", "arrayElement", "stateVariable", "constant"
+validationType: one of "explicit", "implicit", "none", "missing"
 
-"deadline": { name, solType }
+Security Analysis:
+"securityChecks": {
+  "replayProtection": boolean,
+  "deadlineCheck": boolean,
+  "nonceCheck": boolean,
+  "chainIdCheck": boolean,
+  "domainValidation": boolean,
+  "signerValidation": boolean,
+  "thresholdValidation": boolean
+}
 
-"domainSeparator": { name, solType }
+"vulnerabilities": array of detected issues:
+  - "MISSING_NONCE": No nonce protection against replay attacks
+  - "MISSING_DEADLINE": No deadline check, signature never expires
+  - "MISSING_TIMESTAMP": No timestamp validation
+  - "MISSING_CHAIN_ID": No chain ID validation, cross-chain replay possible
+  - "MISSING_DOMAIN_SEPARATOR": No domain separator, cross-contract replay possible
+  - "WEAK_SIGNER_VALIDATION": Insufficient signer validation
+  - "NO_THRESHOLD_CHECK": Multi-sig without threshold validation
+  - "UNSAFE_SIGNATURE_RECOVERY": Using ecrecover without validation
+  - "MISSING_VERSION": EIP712 without version field
+  - "INSUFFICIENT_ENTROPY": Weak randomness in signature scheme
+
+"signatureComplexity": {
+  "hasNestedStructs": boolean,
+  "hasArrays": boolean,
+  "hasMappings": boolean,
+  "structDepth": number,
+  "arrayLength": number,
+  "totalFields": number
+}
 
 ✅ Do not return nulls.
 ✅ Do not return explanations.
 ✅ Do not return comments.
 ✅ Only return valid JSON.
+✅ Include all detected vulnerabilities in the vulnerabilities array.
+✅ Be thorough in security analysis - missing protections are vulnerabilities.
 
 Solidity input:
 
