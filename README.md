@@ -15,13 +15,11 @@ This tool follows a **clear separation of concerns**:
 very_smart_analyzer/
 ├── cmd/analyzer/          # Main CLI application
 ├── internal/
-│   ├── analyzer/          # Security analysis engine
-│   ├── ai/               # AI integration layer
+│   ├── analyzer/          # Security analysis engine + Claude AI integration
 │   ├── network/          # Private network management
 │   ├── fuzzer/           # Fuzz testing engine
 │   ├── executor/         # Contract execution engine
-│   ├── reporter/         # Results and reporting
-│   └── test_vectors/     # Test vector generation
+│   └── reporter/         # Results and reporting
 ├── contracts/            # Test contracts and fixtures
 ├── configs/              # Configuration files
 ├── build/                # Build artifacts (gitignored)
@@ -37,7 +35,7 @@ very_smart_analyzer/
 1. **Prerequisites**:
    - Go 1.19 or later
    - Node.js (for Hardhat)
-   - OpenAI API key
+   - Claude API key (for AI analysis)
 
 2. **Install dependencies**:
    ```bash
@@ -54,11 +52,11 @@ very_smart_analyzer/
 
 ### **1. AI Analysis (Extraction Only)**
 ```bash
-./bin/analyzer ai --contract contracts/TestCases.sol --api-key YOUR_OPENAI_API_KEY
+./bin/analyzer ai --contract contracts/TestCases.sol --api-key YOUR_CLAUDE_API_KEY
 ```
-- **AI extracts** function signatures and metadata
+- **AI extracts** function signatures and metadata using Claude
 - **NO security analysis** performed by AI
-- Outputs: `TestCases_ai_analysis.json`
+- Outputs: `extracted_metadata.json`
 
 ### **2. Security Analysis**
 ```bash
@@ -77,7 +75,7 @@ very_smart_analyzer/
 
 ### **4. Complete Pipeline**
 ```bash
-./bin/analyzer pipeline --contract contracts/TestCases.sol --api-key YOUR_KEY --debug
+./bin/analyzer pipeline --contract contracts/TestCases.sol --api-key YOUR_CLAUDE_API_KEY --debug
 ```
 - Runs the complete workflow: AI → Security → Fuzz Testing
 - Includes debug output for troubleshooting
@@ -99,9 +97,9 @@ network:
   chain_id: 1337
   data_dir: "build/network_data"
 
-# AI settings
+# AI settings (Claude)
 ai:
-  model: "gpt-4"
+  model: "claude"
   max_tokens: 4000
   temperature: 0.1
 
@@ -111,75 +109,8 @@ fuzzer:
   max_gas_limit: 5000000
 ```
 
+**Note**: The tool currently uses Claude for AI analysis. The CLI requires a Claude API key.
+
 ## 🧪 **Test Contracts**
 
-The `contracts/` directory contains sample contracts for testing:
-
-- `TestCases.sol`: Comprehensive test contract with various signature functions
-- `VulnerableReplay.sol.bak`: Backup of vulnerable contract examples
-
-## 🔍 **Vulnerability Detection**
-
-The tool detects the following vulnerabilities:
-
-- **Missing nonce** (replay attack protection)
-- **Missing deadline** (timestamp validation)
-- **Missing chain ID** (cross-chain replay protection)
-- **Missing domain separator** (EIP712 security)
-- **Weak signer validation**
-- **Unsafe signature recovery**
-
-## 🎯 **Fuzz Testing Types**
-
-- **Replay attacks** (execute same signature twice)
-- **Malformed signatures** (invalid formats)
-- **Invalid V/R/S values** (signature components)
-- **Expired deadlines** (timestamp validation)
-- **Invalid nonces** (replay protection)
-- **Domain manipulation** (EIP712 attacks)
-- **Random mutations** (comprehensive testing)
-
-## 📊 **Reports**
-
-The tool generates comprehensive reports in the `build/reports/` directory:
-
-- **AI Analysis**: Function extraction results
-- **Security Analysis**: Vulnerability findings and risk assessment
-- **Fuzz Testing**: Test execution results and coverage
-
-## 🛠️ **Development**
-
-### **Project Structure**
-- **cmd/analyzer/**: Single CLI application with all commands
-- **internal/**: Private packages for core functionality
-- **contracts/**: Test contracts and fixtures
-- **build/**: All generated artifacts (gitignored)
-
-### **Adding New Features**
-1. **New Analysis Types**: Extend the `analyzer` package
-2. **New Fuzz Tests**: Add to the `fuzzer` package
-3. **New AI Prompts**: Modify the `ai` package
-4. **New Report Formats**: Extend the `reporter` package
-
-### **Testing**
-```bash
-# Run all tests
-go test ./...
-
-# Run tests with coverage
-go test -cover ./...
-
-# Run specific package tests
-go test ./internal/analyzer
-```
-
-## 🔒 **Security Considerations**
-
-- The tool is designed for testing and analysis purposes
-- Never use test private keys in production
-- Always review AI-generated analysis results
-- The tool may generate false positives - manual verification is recommended
-
-## 📝 **License**
-
-This project is licensed under the MIT License - see the LICENSE file for details. 
+The `

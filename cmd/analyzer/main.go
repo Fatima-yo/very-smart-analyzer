@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"very_smart_analyzer/internal/ai"
 	"very_smart_analyzer/internal/analyzer"
 	"very_smart_analyzer/internal/fuzzer"
 	"very_smart_analyzer/internal/network"
@@ -64,13 +63,18 @@ func aiCmd() *cobra.Command {
 				analyzer.InitDebug()
 			}
 
-			aiClient := ai.NewClient(apiKey)
-			return aiClient.AnalyzeContract(contractPath)
+			// Set the API key as environment variable for the Claude client
+			if apiKey != "" {
+				os.Setenv("CLAUDE_API_KEY", apiKey)
+			}
+
+			// Test the AI client with the contract
+			return analyzer.TestAIClient()
 		},
 	}
 
 	cmd.Flags().StringVarP(&contractPath, "contract", "c", "", "path to Solidity contract file (required)")
-	cmd.Flags().StringVarP(&apiKey, "api-key", "k", "", "OpenAI API key (required)")
+	cmd.Flags().StringVarP(&apiKey, "api-key", "k", "", "Claude API key (required)")
 	cmd.Flags().StringVarP(&outputPath, "output", "o", "", "output file for AI analysis (default: contract_ai_analysis.json)")
 	cmd.MarkFlagRequired("contract")
 	cmd.MarkFlagRequired("api-key")
@@ -203,8 +207,12 @@ func pipelineCmd() *cobra.Command {
 			// Step 1: AI Analysis
 			if runAI {
 				fmt.Println("=== STEP 1: AI ANALYSIS ===")
-				aiClient := ai.NewClient(apiKey)
-				if err := aiClient.AnalyzeContract(contractPath); err != nil {
+				// Set the API key as environment variable for the Claude client
+				if apiKey != "" {
+					os.Setenv("CLAUDE_API_KEY", apiKey)
+				}
+
+				if err := analyzer.TestAIClient(); err != nil {
 					return fmt.Errorf("AI analysis failed: %w", err)
 				}
 				fmt.Println("✅ AI analysis completed")
@@ -234,7 +242,7 @@ func pipelineCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&contractPath, "contract", "c", "", "path to Solidity contract file (required)")
-	cmd.Flags().StringVarP(&apiKey, "api-key", "k", "", "OpenAI API key (required for AI analysis)")
+	cmd.Flags().StringVarP(&apiKey, "api-key", "k", "", "Claude API key (required for AI analysis)")
 	cmd.Flags().BoolVarP(&runAI, "ai", "a", true, "run AI analysis step")
 	cmd.MarkFlagRequired("contract")
 
