@@ -1,2 +1,45 @@
-.env
-node_modules
+# Build artifacts
+build/
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Hardhat
+cache/
+artifacts/
+typechain/
+typechain-types/
+
+# Generated files
+*.log
+*.tmp
+temp_metadata.json
+extracted_metadata.json
+example_metadata.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test reports
+*_report_*.txt
+comprehensive_report_*.txt
+fuzz_report_*.txt
+
+# Generated test vectors
+generated_test_vectors/
