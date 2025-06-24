@@ -1,12 +1,13 @@
 package analyzer
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -175,9 +176,10 @@ func (c *AIClient) ExtractFunctionDefinitions(contractSource string) (*Signature
 	DebugPrintStep("EXTRACT_FUNCTIONS", "Total unique functions extracted: %d", len(uniqueFunctions))
 
 	return &SignatureMetadata{
-		SignatureFunctions: uniqueFunctions,
-		TotalFunctions:     len(uniqueFunctions),
-		ExtractionTime:     time.Now().Format(time.RFC3339),
+		SignatureFunctions:   uniqueFunctions,
+		TotalVulnerabilities: 0,   // Will be calculated later by analyzer
+		SecurityScore:        0.0, // Will be calculated later by analyzer
+		RiskLevel:            "",  // Will be calculated later by analyzer
 	}, nil
 }
 
@@ -202,14 +204,14 @@ func (c *AIClient) extractFromSingleChunk(contractSource string) (*SignatureMeta
 	}
 
 	// Make the API request
-	response, err := c.makeAPIRequest(prompt)
+	responseText, err := c.makeAPIRequest(prompt)
 	if err != nil {
 		DebugPrintError("API_REQUEST", err)
 		return nil, fmt.Errorf("failed to make API request: %w", err)
 	}
 
 	// Parse the response
-	metadata, err := c.parseAPIResponse(response)
+	metadata, err := c.parseAPIResponse(responseText)
 	if err != nil {
 		DebugPrintError("RESPONSE_PARSE", err)
 		return nil, fmt.Errorf("failed to parse API response: %w", err)
@@ -295,4 +297,138 @@ func TestAIClient() error {
 	DebugPrintStep("TEST_AI_CLIENT", "AI client test completed successfully")
 
 	return nil
+}
+
+// makeAPIRequest makes a single API request to Claude
+func (c *AIClient) makeAPIRequest(prompt string) (string, error) {
+	if Debug.ShowAIInput {
+		DebugPrintAI("Full prompt being sent to AI:")
+		DebugPrintJSON("PROMPT", prompt)
+	}
+
+	// Get model from env or use default
+	model := os.Getenv("CLAUDE_MODEL")
+	if model == "" {
+		model = "claude-3-5-sonnet-20241022"
+	}
+	DebugPrintStep("EXTRACT_FUNCTIONS", "Using model: %s", model)
+
+	// Create the API request
+	request := ClaudeAPIRequest{
+		Model:       model,
+		MaxTokens:   8000, // Model limit is 8192
+		Temperature: 0.1,  // Low temperature for consistent parsing
+		Messages: []Message{
+			{
+				Role:    "user",
+				Content: prompt,
+			},
+		},
+	}
+	DebugPrintStep("EXTRACT_FUNCTIONS", "API request prepared")
+
+	// Marshal the request
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		DebugPrintError("REQUEST_MARSHAL", err)
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+	DebugPrintStep("EXTRACT_FUNCTIONS", "Request marshaled (size: %d bytes)", len(requestBody))
+
+	// Create HTTP request
+	req, err := http.NewRequest("POST", "https://api.anthropic.com/v1/messages", bytes.NewBuffer(requestBody))
+	if err != nil {
+		DebugPrintError("HTTP_REQUEST_CREATE", err)
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+	DebugPrintStep("EXTRACT_FUNCTIONS", "HTTP request created")
+
+	// Set headers
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("x-api-key", c.APIKey)
+	req.Header.Set("anthropic-version", "2023-06-01")
+	DebugPrintStep("EXTRACT_FUNCTIONS", "Headers set")
+
+	// Make the request
+	DebugPrintStep("EXTRACT_FUNCTIONS", "Making API request to Claude...")
+	resp, err := c.Client.Do(req)
+	if err != nil {
+		DebugPrintError("HTTP_REQUEST_SEND", err)
+		return "", fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+	DebugPrintStep("EXTRACT_FUNCTIONS", "API request completed (status: %d)", resp.StatusCode)
+
+	// Read the response
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		DebugPrintError("RESPONSE_READ", err)
+		return "", fmt.Errorf("failed to read response: %w", err)
+	}
+	DebugPrintStep("EXTRACT_FUNCTIONS", "Response body read (size: %d bytes)", len(responseBody))
+
+	// Check for errors
+	if resp.StatusCode != 200 {
+		DebugPrintError("API_ERROR", fmt.Errorf("status %d: %s", resp.StatusCode, string(responseBody)))
+		return "", fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(responseBody))
+	}
+
+	// Parse the response
+	var apiResponse ClaudeAPIResponse
+	if err := json.Unmarshal(responseBody, &apiResponse); err != nil {
+		DebugPrintError("RESPONSE_UNMARSHAL", err)
+		return "", fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	DebugPrintStep("EXTRACT_FUNCTIONS", "API response parsed")
+
+	// Extract the JSON from the response
+	if len(apiResponse.Content) == 0 {
+		DebugPrintError("EMPTY_RESPONSE", fmt.Errorf("no content in API response"))
+		return "", fmt.Errorf("no content in API response")
+	}
+
+	responseText := apiResponse.Content[0].Text
+	DebugPrintStep("EXTRACT_FUNCTIONS", "Raw AI response length: %d characters", len(responseText))
+
+	if Debug.ShowAIOutput {
+		DebugPrintAI("Raw AI response:")
+		DebugPrintJSON("AI_RESPONSE", responseText)
+	}
+
+	return responseText, nil
+}
+
+// parseAPIResponse parses the API response and extracts metadata
+func (c *AIClient) parseAPIResponse(responseText string) (*SignatureMetadata, error) {
+	// Extract JSON from the response (remove any markdown formatting)
+	jsonStart := strings.Index(responseText, "{")
+	jsonEnd := strings.LastIndex(responseText, "}")
+
+	if jsonStart == -1 || jsonEnd == -1 {
+		DebugPrintError("JSON_EXTRACTION", fmt.Errorf("no JSON found in response"))
+		DebugPrintAI("Response text that couldn't be parsed:")
+		DebugPrintJSON("FAILED_RESPONSE", responseText)
+		return nil, fmt.Errorf("no JSON found in response: %s", responseText)
+	}
+
+	jsonStr := responseText[jsonStart : jsonEnd+1]
+	DebugPrintStep("EXTRACT_FUNCTIONS", "JSON extracted (length: %d characters)", len(jsonStr))
+
+	if Debug.ShowAIOutput {
+		DebugPrintAI("Extracted JSON:")
+		DebugPrintJSON("EXTRACTED_JSON", jsonStr)
+	}
+
+	// Parse the extracted metadata
+	var metadata SignatureMetadata
+	if err := json.Unmarshal([]byte(jsonStr), &metadata); err != nil {
+		DebugPrintError("METADATA_PARSE", err)
+		DebugPrintAI("Failed to parse JSON string:")
+		DebugPrintJSON("FAILED_JSON", jsonStr)
+		return nil, fmt.Errorf("failed to parse extracted JSON: %w", err)
+	}
+	DebugPrintStep("EXTRACT_FUNCTIONS", "Metadata parsed successfully")
+	DebugPrintStep("EXTRACT_FUNCTIONS", "Found %d signature functions", len(metadata.SignatureFunctions))
+
+	return &metadata, nil
 }
