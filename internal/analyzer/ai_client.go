@@ -248,14 +248,18 @@ func TestAIClient() error {
 	}
 	DebugPrintStep("TEST_AI_CLIENT", "AI client created successfully")
 
-	// Read test contract
-	contractPath := "contracts/TestCases.sol"
+	// Get contract path from environment variable (set by pipeline command)
+	contractPath := os.Getenv("ANALYZER_CONTRACT_PATH")
+	if contractPath == "" {
+		contractPath = "contracts/TestCases.sol" // fallback for direct testing
+	}
+
 	contractData, err := os.ReadFile(contractPath)
 	if err != nil {
 		DebugPrintError("CONTRACT_READ", err)
-		return fmt.Errorf("failed to read test contract: %w", err)
+		return fmt.Errorf("failed to read contract %s: %w", contractPath, err)
 	}
-	DebugPrintStep("TEST_AI_CLIENT", "Test contract read (length: %d characters)", len(contractData))
+	DebugPrintStep("TEST_AI_CLIENT", "Contract read from %s (length: %d characters)", contractPath, len(contractData))
 
 	// Extract function definitions
 	DebugPrintStep("TEST_AI_CLIENT", "Calling AI to extract function definitions...")
@@ -287,13 +291,24 @@ func TestAIClient() error {
 	}
 	DebugPrintStep("TEST_AI_CLIENT", "Metadata marshaled for output")
 
-	if err := os.WriteFile("extracted_metadata.json", metadataJSON, 0644); err != nil {
+	// Generate output filename based on contract path
+	outputPath := os.Getenv("ANALYZER_OUTPUT_PATH")
+	if outputPath == "" {
+		// Default fallback - use contract name
+		if contractPath != "" {
+			outputPath = fmt.Sprintf("%s_ai_analysis.json", contractPath[:len(contractPath)-4])
+		} else {
+			outputPath = "extracted_metadata.json"
+		}
+	}
+
+	if err := os.WriteFile(outputPath, metadataJSON, 0644); err != nil {
 		DebugPrintError("METADATA_SAVE", err)
 		return fmt.Errorf("failed to save metadata: %w", err)
 	}
-	DebugPrintStep("TEST_AI_CLIENT", "Metadata saved to extracted_metadata.json")
+	DebugPrintStep("TEST_AI_CLIENT", "Metadata saved to %s", outputPath)
 
-	fmt.Println("\nMetadata saved to extracted_metadata.json")
+	fmt.Printf("\nMetadata saved to %s\n", outputPath)
 	DebugPrintStep("TEST_AI_CLIENT", "AI client test completed successfully")
 
 	return nil

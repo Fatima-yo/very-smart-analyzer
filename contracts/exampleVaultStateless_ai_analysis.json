@@ -1,0 +1,83 @@
+{
+  "signatureFunctions": [
+    {
+      "functionName": "withdraw",
+      "functionSelector": "withdraw(WithdrawRequest calldata,bytes calldata)",
+      "signatureType": {
+        "kind": "EIP712",
+        "description": ""
+      },
+      "functionContext": {
+        "visibility": "",
+        "stateMutability": "",
+        "accessControl": null
+      },
+      "nonce": {
+        "name": "nonce",
+        "solType": "uint256",
+        "source": "structField",
+        "validationType": "explicit"
+      },
+      "deadline": {
+        "name": "deadline",
+        "solType": "uint256",
+        "source": "structField",
+        "validationType": "explicit"
+      },
+      "signatureFields": {
+        "structured": true,
+        "structName": "WithdrawRequest",
+        "fields": [
+          {
+            "name": "owner",
+            "solType": "address"
+          },
+          {
+            "name": "to",
+            "solType": "address"
+          },
+          {
+            "name": "amount",
+            "solType": "uint256"
+          },
+          {
+            "name": "nonce",
+            "solType": "uint256"
+          },
+          {
+            "name": "deadline",
+            "solType": "uint256"
+          }
+        ]
+      },
+      "signature": [
+        {
+          "name": "",
+          "solType": "bytes",
+          "source": "parameter",
+          "signerRole": "owner"
+        }
+      ],
+      "signatureComplexity": {
+        "hasNestedStructs": false,
+        "hasArrays": false,
+        "hasMappings": false,
+        "structDepth": 1,
+        "arrayLength": 0,
+        "totalFields": 5
+      },
+      "securityChecks": {
+        "replayProtection": false,
+        "deadlineCheck": false,
+        "nonceCheck": false,
+        "chainIdCheck": false,
+        "domainValidation": false,
+        "signerValidation": false,
+        "thresholdValidation": false
+      }
+    }
+  ],
+  "totalVulnerabilities": 0,
+  "securityScore": 0,
+  "riskLevel": ""
+}

@@ -204,13 +204,28 @@ func pipelineCmd() *cobra.Command {
 
 			fmt.Println("=== VERY SMART ANALYZER - COMPLETE PIPELINE ===")
 
+			// Clean up old analysis files
+			fmt.Println("🧹 Cleaning up old analysis files...")
+			oldFiles := []string{
+				"extracted_metadata.json",
+				fmt.Sprintf("%s_ai_analysis.json", contractPath[:len(contractPath)-4]),
+				"security_analysis.json",
+			}
+			for _, file := range oldFiles {
+				if err := os.Remove(file); err != nil && !os.IsNotExist(err) {
+					fmt.Printf("Warning: Could not remove old file %s: %v\n", file, err)
+				}
+			}
+
 			// Step 1: AI Analysis
 			if runAI {
 				fmt.Println("=== STEP 1: AI ANALYSIS ===")
-				// Set the API key as environment variable for the Claude client
+				// Set environment variables for the AI client
 				if apiKey != "" {
 					os.Setenv("CLAUDE_API_KEY", apiKey)
 				}
+				os.Setenv("ANALYZER_CONTRACT_PATH", contractPath)
+				os.Setenv("ANALYZER_OUTPUT_PATH", fmt.Sprintf("%s_ai_analysis.json", contractPath[:len(contractPath)-4]))
 
 				if err := analyzer.TestAIClient(); err != nil {
 					return fmt.Errorf("AI analysis failed: %w", err)
@@ -226,6 +241,26 @@ func pipelineCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("security analysis failed: %w", err)
 			}
+
+			// Show detailed security analysis results
+			fmt.Printf("📊 Security Analysis Results:\n")
+			fmt.Printf("   • Total Vulnerabilities: %d\n", metadata.TotalVulnerabilities)
+			fmt.Printf("   • Security Score: %.2f/10\n", metadata.SecurityScore)
+			fmt.Printf("   • Risk Level: %s\n", metadata.RiskLevel)
+
+			if metadata.TotalVulnerabilities > 0 {
+				fmt.Printf("\n🚨 Vulnerabilities Found by Function:\n")
+				for _, fn := range metadata.SignatureFunctions {
+					if len(fn.Vulnerabilities) > 0 {
+						fmt.Printf("   📋 Function: %s\n", fn.FunctionName)
+						for i, vuln := range fn.Vulnerabilities {
+							fmt.Printf("      %d. %s\n", i+1, vuln)
+						}
+						fmt.Println()
+					}
+				}
+			}
+
 			fmt.Printf("✅ Security analysis completed - Found %d vulnerabilities\n", metadata.TotalVulnerabilities)
 
 			// Step 3: Fuzz Testing

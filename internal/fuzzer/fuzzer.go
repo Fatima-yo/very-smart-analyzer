@@ -184,6 +184,28 @@ func getTestTypeIcon(testType FuzzTestType) string {
 	}
 }
 
+// getTestExplanation returns a simple explanation of what each test type does
+func (f *Fuzzer) getTestExplanation(testType FuzzTestType) string {
+	switch testType {
+	case ReplayAttack:
+		return "Trying to reuse an old signature"
+	case MalformedSig:
+		return "Testing with invalid signature format"
+	case InvalidVRS:
+		return "Testing with corrupted signature components"
+	case ExpiredDeadline:
+		return "Testing with expired timestamp"
+	case InvalidNonce:
+		return "Testing with wrong nonce value"
+	case DomainManipulation:
+		return "Testing with modified domain data"
+	case RandomMutation:
+		return "Testing with randomly corrupted data"
+	default:
+		return "Testing signature validation"
+	}
+}
+
 // printSummaryTable prints a beautiful summary table
 func printSummaryTable(results []FuzzTestResult, duration time.Duration) {
 	fmt.Println()
@@ -362,16 +384,49 @@ func (f *Fuzzer) CompileContract(contractPath string) (string, string, error) {
 		Bin string      `json:"bin"`
 	}
 
+	// Extract the contract name from the file path
+	contractFileName := filepath.Base(contractPath)
+	expectedContractName := strings.TrimSuffix(contractFileName, filepath.Ext(contractFileName))
+
+	// First try to find a contract that matches the file name
 	for name, data := range result.Contracts {
-		if strings.Contains(name, "TestSignatureContract") {
-			contractName = name
-			contractData = data
-			break
+		// Skip if it's a library or interface
+		if strings.Contains(strings.ToLower(name), "library") ||
+			strings.Contains(strings.ToLower(name), "interface") {
+			continue
+		}
+
+		// Check if it has bytecode (actual contract, not just interface)
+		if data.Bin != "" && len(data.Bin) > 2 { // More than just "0x"
+			// Check if this contract name matches our expected contract
+			if strings.Contains(strings.ToLower(name), strings.ToLower(expectedContractName)) {
+				contractName = name
+				contractData = data
+				break
+			}
+		}
+	}
+
+	// If we didn't find a matching contract, fall back to any deployable contract
+	if contractName == "" {
+		for name, data := range result.Contracts {
+			// Skip if it's a library or interface
+			if strings.Contains(strings.ToLower(name), "library") ||
+				strings.Contains(strings.ToLower(name), "interface") {
+				continue
+			}
+
+			// Check if it has bytecode (actual contract, not just interface)
+			if data.Bin != "" && len(data.Bin) > 2 { // More than just "0x"
+				contractName = name
+				contractData = data
+				break
+			}
 		}
 	}
 
 	if contractName == "" {
-		return "", "", fmt.Errorf("TestSignatureContract not found in compilation output")
+		return "", "", fmt.Errorf("no deployable contract found in compilation output")
 	}
 
 	// Convert ABI to string if it's an array
@@ -1008,7 +1063,9 @@ func (f *Fuzzer) executeTests(testCases []FuzzTest) ([]FuzzTestResult, error) {
 
 	for i, testCase := range testCases {
 		progressBar := fmt.Sprintf("[%d/%d]", i+1, len(testCases))
+		explanation := f.getTestExplanation(testCase.Type)
 		color.New(color.FgCyan).Printf("\n%s Testing: %s", progressBar, testCase.Name)
+		color.New(color.FgHiBlack).Printf(" - %s", explanation)
 
 		var result FuzzTestResult
 
