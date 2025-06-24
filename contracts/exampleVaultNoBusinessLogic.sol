@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract StatelessVault is EIP712, ReentrancyGuard {
+contract exampleVaultNoBusinessLogic is EIP712, ReentrancyGuard {
     using ECDSA for bytes32;
 
     string private constant SIGNING_DOMAIN = "Vault";
