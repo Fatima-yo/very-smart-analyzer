@@ -7,16 +7,23 @@
         "kind": "EIP712",
         "description": "Combined signature as bytes"
       },
+      "functionContext": {
+        "visibility": "external",
+        "stateMutability": "nonpayable",
+        "accessControl": []
+      },
       "signatureFields": {
         "structured": false,
         "fields": [
           {
             "name": "sender",
-            "solType": "address"
+            "solType": "address",
+            "isNested": false
           },
           {
             "name": "amount",
-            "solType": "uint256"
+            "solType": "uint256",
+            "isNested": false
           }
         ]
       },
@@ -26,7 +33,15 @@
           "solType": "bytes",
           "signerRole": "user"
         }
-      ]
+      ],
+      "signatureComplexity": {
+        "hasNestedStructs": false,
+        "hasArrays": false,
+        "hasMappings": false,
+        "structDepth": 0,
+        "arrayLength": 0,
+        "totalFields": 2
+      }
     },
     {
       "functionName": "sig_combined_struct_single",
@@ -35,17 +50,24 @@
         "kind": "EIP712",
         "description": "Combined signature inside struct"
       },
+      "functionContext": {
+        "visibility": "external",
+        "stateMutability": "nonpayable",
+        "accessControl": []
+      },
       "signatureFields": {
         "structured": true,
         "structName": "MyStruct",
         "fields": [
           {
             "name": "user",
-            "solType": "address"
+            "solType": "address",
+            "isNested": false
           },
           {
             "name": "nonce",
-            "solType": "uint256"
+            "solType": "uint256",
+            "isNested": false
           }
         ]
       },
@@ -56,7 +78,21 @@
           "signerRole": "user",
           "parentStruct": "MyStruct"
         }
-      ]
+      ],
+      "nonce": {
+        "name": "nonce",
+        "solType": "uint256",
+        "source": "structField",
+        "validationType": "explicit"
+      },
+      "signatureComplexity": {
+        "hasNestedStructs": false,
+        "hasArrays": false,
+        "hasMappings": false,
+        "structDepth": 1,
+        "arrayLength": 0,
+        "totalFields": 2
+      }
     }
   ]
 }

@@ -1,7 +1,11 @@
 You are helping build a smart fuzz-testing tool for Ethereum smart contracts. 
-This tool analyzes how contracts verify off-chain signatures and looks for logic-level security flaws and testable behaviors (like missing nonces or replays).
+This tool analyzes how contracts verify off-chain signatures to extract function definitions for test generation.
 
 Your task is to analyze a Solidity smart contract and return a JSON object that describes every function that accepts or verifies an off-chain signature.
+
+IMPORTANT: Do NOT perform any security analysis or vulnerability detection. Your job is ONLY to extract function definitions and signature patterns. Security analysis will be performed by the Go code.
+
+CRITICAL: You MUST return valid JSON. Do not include any explanations, comments, or markdown formatting around the JSON.
 
 General Rules:
 For each function that verifies a signature:
@@ -63,29 +67,7 @@ These are fields that may or may not appear in the contract. Return them only if
 source: one of "parameter", "structField", "arrayElement", "stateVariable", "constant"
 validationType: one of "explicit", "implicit", "none", "missing"
 
-Security Analysis:
-"securityChecks": {
-  "replayProtection": boolean,
-  "deadlineCheck": boolean,
-  "nonceCheck": boolean,
-  "chainIdCheck": boolean,
-  "domainValidation": boolean,
-  "signerValidation": boolean,
-  "thresholdValidation": boolean
-}
-
-"vulnerabilities": array of detected issues:
-  - "MISSING_NONCE": No nonce protection against replay attacks
-  - "MISSING_DEADLINE": No deadline check, signature never expires
-  - "MISSING_TIMESTAMP": No timestamp validation
-  - "MISSING_CHAIN_ID": No chain ID validation, cross-chain replay possible
-  - "MISSING_DOMAIN_SEPARATOR": No domain separator, cross-contract replay possible
-  - "WEAK_SIGNER_VALIDATION": Insufficient signer validation
-  - "NO_THRESHOLD_CHECK": Multi-sig without threshold validation
-  - "UNSAFE_SIGNATURE_RECOVERY": Using ecrecover without validation
-  - "MISSING_VERSION": EIP712 without version field
-  - "INSUFFICIENT_ENTROPY": Weak randomness in signature scheme
-
+Signature Complexity (structural information):
 "signatureComplexity": {
   "hasNestedStructs": boolean,
   "hasArrays": boolean,
@@ -99,8 +81,10 @@ Security Analysis:
 ✅ Do not return explanations.
 ✅ Do not return comments.
 ✅ Only return valid JSON.
-✅ Include all detected vulnerabilities in the vulnerabilities array.
-✅ Be thorough in security analysis - missing protections are vulnerabilities.
+✅ Do NOT perform security analysis or vulnerability detection.
+✅ Focus ONLY on extracting function definitions and signature patterns.
+✅ Be thorough in extracting all signature-related function details.
+✅ If no signature functions are found, return an empty array for signatureFunctions.
 
 Solidity input:
 
