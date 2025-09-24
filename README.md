@@ -113,4 +113,52 @@ fuzzer:
 
 ## 🧪 **Test Contracts**
 
-The `
+The `contracts/` directory contains various test contracts designed to showcase different vulnerability patterns:
+
+- **`TestCases.sol`**: Main test contract with signature verification vulnerabilities
+- **`comprehensive_signature_test_vectors.sol`**: Comprehensive test vectors for signature-based vulnerabilities
+- **`VulnerableReplay.sol.bak`**: Backup of vulnerable replay attack examples
+- **`exampleVault.sol`**: Sample vault contract with potential security issues
+- **`exampleVaultNoBusinessLogic.sol`**: Simplified vault for testing basic patterns
+- **`test_contract.sol`**: Additional test scenarios
+
+### **Running Against Test Contracts**
+
+```bash
+# Analyze the main test contract
+./bin/analyzer pipeline --contract contracts/TestCases.sol --api-key YOUR_API_KEY
+
+# Analyze comprehensive test vectors
+./bin/analyzer pipeline --contract contracts/comprehensive_signature_test_vectors.sol --api-key YOUR_API_KEY
+```
+
+## 🔍 **Key Features**
+
+- **AI-Powered Analysis**: Uses Claude AI for intelligent contract parsing and signature extraction
+- **Targeted Fuzzing**: Generates smart fuzz tests based on identified vulnerabilities
+- **Signature Vulnerability Focus**: Specialized detection of signature replay and verification issues
+- **Private Network Integration**: Built-in Hardhat network management
+- **Comprehensive Reporting**: Detailed security analysis and testing reports
+
+## 📊 **Output Examples**
+
+The tool generates multiple types of output:
+- **Metadata Files**: AI-extracted function signatures and contract structure
+- **Security Reports**: Vulnerability analysis in JSON format
+- **Fuzz Test Results**: Test execution results with gas usage and success rates
+- **Debug Logs**: Detailed execution traces for troubleshooting
+
+## 🤝 **Contributing**
+
+1. Fork the repository
+2. Create a feature branch
+3. Add tests for new functionality
+4. Submit a pull request
+
+## 📄 **License**
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
+
+**Happy analyzing! 🔍✨**
